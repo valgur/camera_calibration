@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6...3.14)
+cmake_minimum_required(VERSION 3.18)
 project(generic_models LANGUAGES C CXX)
 
 # Use a release build (with debug info) by default, since it runs slowly with a debug build
@@ -27,5 +27,5 @@ set_target_properties(generic_models PROPERTIES
 )
 target_include_directories(generic_models PUBLIC
   src
-  ${EIGEN3_INCLUDE_DIR}
 )
+target_link_libraries(generic_models PUBLIC Eigen3::Eigen)

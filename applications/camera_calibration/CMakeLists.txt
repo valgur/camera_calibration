@@ -1,32 +1,18 @@
 if (CMAKE_CUDA_COMPILER)
   # Make CMake find the Find<Package>.cmake files in the cmake subdirectory.
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-  
-  # Packaged third-party library: AprilTag
-  file(GLOB CAMERA_CALIBRATION_APRILTAG_SRC
-    "third_party/apriltag/*.h"
-    "third_party/apriltag/*.c"
-    "third_party/apriltag/common/*.h"
-    "third_party/apriltag/common/*.c"
-  )
-  add_library(camera_calibration_apriltag ${CAMERA_CALIBRATION_APRILTAG_SRC})
-  set_property(TARGET camera_calibration_apriltag PROPERTY C_STANDARD 99)
-  target_include_directories(camera_calibration_apriltag PRIVATE third_party/apriltag/)
-  set_target_properties(camera_calibration_apriltag PROPERTIES
-    POSITION_INDEPENDENT_CODE ON
-  )
-  
-  # Packaged third-party library: YAML-CPP
-  add_subdirectory(third_party/yaml-cpp-0.6.0)
+
+  find_package(apriltag REQUIRED CONFIG)
+  find_package(yaml-cpp REQUIRED CONFIG)
 
   # Find external library librealsense2 for live RealSense camera support
-  find_package(realsense2)
+  find_package(realsense2 QUIET)
   if (realsense2_FOUND)
     add_definitions(-DHAVE_REALSENSE)
   endif()
   
   # Find external library Structure SDK for live Structure Core camera support
-  find_package(Structure)
+  find_package(Structure QUIET)
   
   # Find external library OpenGV
   find_package(opengv REQUIRED)
@@ -160,26 +146,17 @@ if (CMAKE_CUDA_COMPILER)
   )
   target_include_directories(camera_calibration_baselib PRIVATE
     src
-    ${CERES_INCLUDE_DIRS}
-    third_party/apriltag
-    third_party/yaml-cpp-0.6.0/include
     ${realsense_INCLUDE_DIR}
     ${OpenCV_INCLUDE_DIRS}
   )
-  if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11)
-    target_include_directories(camera_calibration_baselib PRIVATE
-      third_party/cub-1.8.0
-    )
-  endif()
   target_link_libraries(camera_calibration_baselib PUBLIC
     libvis
     libvis_cuda
     libvis_external_io
-    ${CERES_LIBRARIES}
     CUDA::cublas
     opengv
-    camera_calibration_apriltag
-    yaml-cpp2
+    apriltag::apriltag
+    yaml-cpp::yaml-cpp
     ${OpenCV_LIBS}
     ${realsense2_LIBRARY}
     Qt5::Widgets
@@ -187,7 +164,7 @@ if (CMAKE_CUDA_COMPILER)
     v4l2
     X11
   )
-  
+
   if (TARGET StructurePrebuilt)
     target_link_libraries(camera_calibration_baselib PUBLIC
       StructurePrebuilt
@@ -209,12 +186,11 @@ if (CMAKE_CUDA_COMPILER)
   )
   target_include_directories(camera_calibration PRIVATE
     src
-    third_party/yaml-cpp-0.6.0/include
   )
   target_link_libraries(camera_calibration PRIVATE
     camera_calibration_baselib
     ${Boost_LIBRARIES}
-    yaml-cpp2
+    yaml-cpp::yaml-cpp
     libvis_external_io
   )
   set_target_properties(camera_calibration PROPERTIES
@@ -250,15 +226,12 @@ if (CMAKE_CUDA_COMPILER)
   add_dependencies(camera_calibration_test camera_calibration_test_resources)
   target_link_libraries(camera_calibration_test
     camera_calibration_baselib
-    gtest
+    GTest::gtest
     pthread
-    yaml-cpp2
+    yaml-cpp::yaml-cpp
   )
   target_include_directories(camera_calibration_test PRIVATE
     src
-    ${gtest_SOURCE_DIR}/include
-    ${gtest_SOURCE_DIR}
-    third_party/yaml-cpp-0.6.0/include
   )
   add_test(camera_calibration_test
     camera_calibration_test
