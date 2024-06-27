@@ -90,5 +90,5 @@ TEST(OpenGV, AbsolutePoseSacProblem) {
       Sophus::SE3d(global_tr_camera_matrix.block<3, 3>(0, 0).cast<double>(),
                    global_tr_camera_matrix.block<3, 1>(0, 3).cast<double>()));
   
-  EXPECT_LE(SE3d::log(camera_tr_global * global_tr_camera_estimate).norm(), 1e-4f);
+  EXPECT_LE((camera_tr_global * global_tr_camera_estimate).log().norm(), 1e-4f);
 }

@@ -51,7 +51,7 @@ LibvisApplication::LibvisApplication(int argc, char** argv) {
   loguru::g_stderr_verbosity = 2;
 #endif
   if (argc > 0) {
-    loguru::init(argc, argv, /*verbosity_flag*/ nullptr);
+    loguru::init(argc, argv);
   }
 }
 

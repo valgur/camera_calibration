@@ -28,6 +28,8 @@
 
 #include "camera_calibration/relative_pose_initialization/algorithms.h"
 
+#include <iostream>
+
 namespace vis {
 
 bool NonCentralCameraPlanarCalibrationObjectRelativePose(const Point3fCloud clouds[3], SE3d cloud2_tr_cloud[2], SE3d gt_cloud2_tr_cloud[2]) {

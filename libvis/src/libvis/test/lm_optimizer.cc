@@ -253,7 +253,7 @@ TEST(LMOptimizer, SE3Optimization) {
   
   // Verify that the correct result is returned.
   constexpr float kErrorTolerance = 0.0001f;
-  SE3f::Tangent error = SE3f::log(state.dest_TR_src.inverse() * ground_truth_dest_TR_src);
+  SE3f::Tangent error = (state.dest_TR_src.inverse() * ground_truth_dest_TR_src).log();
   EXPECT_LE(error(0), kErrorTolerance);
   EXPECT_LE(error(1), kErrorTolerance);
   EXPECT_LE(error(2), kErrorTolerance);
@@ -268,7 +268,7 @@ TEST(LMOptimizer, SE3Optimization) {
       &external_state,
       cost_function,
       /*max_iteration_count*/ 100);
-  error = SE3f::log(value.inverse() * ground_truth_dest_TR_src);
+  error = (value.inverse() * ground_truth_dest_TR_src).log();
   EXPECT_LE(error(0), kErrorTolerance);
   EXPECT_LE(error(1), kErrorTolerance);
   EXPECT_LE(error(2), kErrorTolerance);

@@ -39,6 +39,7 @@
 
 #include "libvis/logging.h"
 #include <QResizeEvent>
+#include <QThread>
 #include <QTimer>
 
 #include "libvis/qt_thread.h"
@@ -729,11 +730,16 @@ void RenderWidgetVulkan::DestroySurfaceDependentObjects() {
 
 RenderWindowQtVulkan::RenderWindowQtVulkan(const string& title, int width, int height, const shared_ptr<RenderWindowCallbacks>& callbacks)
     : RenderWindowQt(title, width, height, callbacks) {
-  QtThread::Instance()->RunInQtThreadBlocking([&](){
+  auto* thread = new QThread;
+  render_widget_ = new RenderWidgetVulkan();
+  render_widget_->moveToThread(thread);
+  QObject::connect(thread, &QThread::started, render_widget_, [&](){
     // Add the Vulkan render widget to the window created by the parent class.
-    render_widget_ = new RenderWidgetVulkan();
     window_->setCentralWidget(QWidget::createWindowContainer(render_widget_));
   });
+  QObject::connect(thread, &QThread::finished, render_widget_, &RenderWidgetVulkan::deleteLater);
+  QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+  thread->start();
 }
 
 void RenderWindowQtVulkan::RenderFrame() {

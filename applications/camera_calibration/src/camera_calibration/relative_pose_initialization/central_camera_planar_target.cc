@@ -28,6 +28,8 @@
 
 #include "camera_calibration/relative_pose_initialization/algorithms.h"
 
+#include <iostream>
+
 namespace vis {
 
 // Implemented from Sec. 5.3 in S. Ramalingam's PhD thesis.

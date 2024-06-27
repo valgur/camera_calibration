@@ -30,6 +30,9 @@ include(CheckLanguage)
 #       Common settings are either the 'native' arch for which the binary will
 #       be known to run on exclusively, or a broader set of PTX architectures
 #       in case the binary is intended for distribution.
+if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+  set(CMAKE_CUDA_ARCHITECTURES native)
+endif()
 check_language(CUDA)
 if (CMAKE_CUDA_COMPILER)
   enable_language(CUDA)

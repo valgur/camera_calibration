@@ -28,7 +28,7 @@
 
 #include "libvis/external_io/meshlab_project.h"
 
-#include <tinyxml2/tinyxml2.h>
+#include <tinyxml2.h>
 
 using namespace tinyxml2;
 
@@ -107,7 +107,7 @@ bool WriteMeshLabProject(const std::string& project_file_path, const MeshLabMesh
     xml_mlmesh->InsertEndChild(xml_mlmatrix44);
   }
   
-  return (doc.SaveFile(project_file_path.c_str()) == tinyxml2::XML_NO_ERROR);
+  return (doc.SaveFile(project_file_path.c_str()) == tinyxml2::XML_SUCCESS);
 }
 
 }
