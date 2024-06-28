@@ -2,8 +2,8 @@ if (CMAKE_CUDA_COMPILER)
   # Make CMake find the Find<Package>.cmake files in the cmake subdirectory.
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-  find_package(apriltag REQUIRED CONFIG)
-  find_package(yaml-cpp REQUIRED CONFIG)
+  find_package(apriltag REQUIRED)
+  find_package(yaml-cpp REQUIRED)
 
   # Find external library librealsense2 for live RealSense camera support
   find_package(realsense2 QUIET)
@@ -147,7 +147,6 @@ if (CMAKE_CUDA_COMPILER)
   target_include_directories(camera_calibration_baselib PRIVATE
     src
     ${realsense_INCLUDE_DIR}
-    ${OpenCV_INCLUDE_DIRS}
   )
   target_link_libraries(camera_calibration_baselib PUBLIC
     libvis
@@ -157,10 +156,10 @@ if (CMAKE_CUDA_COMPILER)
     opengv
     apriltag::apriltag
     yaml-cpp::yaml-cpp
-    ${OpenCV_LIBS}
     ${realsense2_LIBRARY}
     Qt5::Widgets
-    ${Boost_LIBRARIES}
+    Boost::headers
+    Boost::filesystem
     v4l2
     X11
   )
@@ -189,7 +188,7 @@ if (CMAKE_CUDA_COMPILER)
   )
   target_link_libraries(camera_calibration PRIVATE
     camera_calibration_baselib
-    ${Boost_LIBRARIES}
+    Boost::headers
     yaml-cpp::yaml-cpp
     libvis_external_io
   )

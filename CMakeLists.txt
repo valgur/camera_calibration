@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
+include(cmake/third_party.cmake)
 project(libvis LANGUAGES C CXX)
-
 
 # Enable C++14 globally
 set(CMAKE_CXX_STANDARD 14)
@@ -69,14 +69,16 @@ find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization filesystem system)
-find_package(loguru REQUIRED CONFIG)
+find_package(loguru REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(PNG REQUIRED)
+find_package(Sophus REQUIRED)
+find_package(RapidJSON REQUIRED)
 
-find_package(GTest REQUIRED CONFIG)
+find_package(GTest REQUIRED)
 enable_testing()
 
-find_package(VulkanLoader REQUIRED CONFIG)
+find_package(VulkanLoader REQUIRED)
 find_program(GLSLANG_VALIDATOR glslangValidator REQUIRED)
 set(VULKAN_FOUND TRUE)
 
@@ -130,17 +132,13 @@ add_executable(bin2c
 )
 set_property(TARGET bin2c PROPERTY FOLDER "libvis")
 
-target_include_directories(bin2c PRIVATE
-  ${Boost_INCLUDE_DIR}
-)
-
 target_compile_options(bin2c PRIVATE
   "${LIBVIS_WARNING_OPTIONS}"
 )
 target_link_libraries(bin2c
-  ${Boost_LIBRARIES}
+  Boost::headers
+  Boost::filesystem
 )
-
 
 ################################################################################
 # Function for generating headers with SPIR-V bytecode from GLSL code.
@@ -283,39 +281,35 @@ target_compile_options(libvis PRIVATE
   "${LIBVIS_WARNING_OPTIONS}"
   $<$<COMPILE_LANGUAGE:CXX>:-march=native>
 )
+
 if (VULKAN_FOUND)
   target_compile_options(libvis PUBLIC -DLIBVIS_HAVE_VULKAN)
 endif()
-
 target_compile_options(libvis PUBLIC -DLIBVIS_HAVE_QT)
 target_compile_options(libvis PUBLIC -DLIBVIS_HAVE_CUDA)
 
-find_package(Sophus REQUIRED CONFIG)
-find_package(RapidJSON CONFIG REQUIRED)
-target_link_libraries(libvis PUBLIC Sophus::Sophus rapidjson)
-
 target_include_directories(libvis
   PUBLIC
-    ${OpenCV_INCLUDE_DIRS}
     ./libvis/src
   PRIVATE
-    ${Boost_INCLUDE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 target_link_libraries(libvis
   PUBLIC
+    CUDA::cusolver
     Eigen3::Eigen
     loguru::loguru
-    CUDA::cusolver
-    Qt5::Widgets
-    Qt5::OpenGL
     Qt5::Core
+    Qt5::OpenGL
+    Qt5::Widgets
+    rapidjson
+    Sophus::Sophus
   PRIVATE
-    ${Boost_LIBRARIES}
+    Boost::headers
     GLEW::GLEW
-    ${OPENGL_LIBRARY}
-    Qt5::X11Extras
+    OpenGL::GL
     PNG::PNG
+    Qt5::X11Extras
     Threads::Threads
 )
 if(VULKAN_FOUND)
@@ -342,13 +336,9 @@ target_compile_options(libvis_external_io PRIVATE
   $<$<COMPILE_LANGUAGE:CXX>:-march=native>
 )
 target_link_libraries(libvis_external_io PUBLIC
-  ${Boost_LIBRARIES}
+  Boost::headers
   libvis
 )
-target_include_directories(libvis_external_io PUBLIC
-  ${Boost_INCLUDE_DIR}
-)
-
 
 # libvis optional library: libvis_cuda.
 # Contains CUDA functionality, which is only useful with NVIDIA graphics cards.
@@ -382,10 +372,6 @@ if (CMAKE_CUDA_COMPILER)
     libvis/src/libvis/cuda/pixel_corner_projector.h
   )
   set_property(TARGET libvis_cuda PROPERTY FOLDER "libvis")
-  target_include_directories(libvis_cuda PUBLIC
-    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
-    ${OpenCV_INCLUDE_DIRS}
-  )
   target_compile_options(libvis_cuda PRIVATE
     "${LIBVIS_WARNING_OPTIONS}"
     $<$<COMPILE_LANGUAGE:CXX>:-march=native>
@@ -413,11 +399,7 @@ if (CMAKE_CUDA_COMPILER)
     Threads::Threads
     libvis_cuda
     CUDA::cublas  # TODO: currently required because of lm_optimizer.h. That should not be necessary.
-  )
-  target_include_directories(libvis_cuda_test PRIVATE
-    ${OpenCV_INCLUDE_DIRS}
-    ${GLEW_INCLUDE_DIRS}
-    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}  # TODO: currently required because of lm_optimizer.h. That should not be necessary.
+    GLEW::GLEW
   )
   add_test(libvis_cuda_test
     libvis_cuda_test
@@ -452,11 +434,7 @@ target_link_libraries(libvis_test PRIVATE
   Threads::Threads
   libvis
   CUDA::cublas  # TODO: currently required because of lm_optimizer.h. That should not be necessary.
-)
-target_include_directories(libvis_test PRIVATE
-  ${OpenCV_INCLUDE_DIRS}
-  ${GLEW_INCLUDE_DIRS}
-  ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}  # TODO: currently required because of lm_optimizer.h. That should not be necessary.
+  GLEW::GLEW
 )
 add_test(libvis_test
   libvis_test

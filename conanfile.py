@@ -29,7 +29,7 @@ class PuzzlepaintCameraCalibrationPackage(ConanFile):
         self.requires("boost/1.85.0")
         self.requires("eigen/3.4.0")
         self.requires("glew/2.2.0")
-        self.requires("libpng/[>=1.6 <2]", force=True)
+        self.requires("libpng/1.6.43", force=True)
         self.requires("loguru/cci.20230406", options={"enable_streams": True, "replace_glog": True})
         self.requires("opengl/system")
         self.requires("opengv/cci.20200806")
@@ -40,7 +40,6 @@ class PuzzlepaintCameraCalibrationPackage(ConanFile):
         self.requires("xorg/system")
         self.requires("yaml-cpp/0.8.0")
         self.requires("zlib/1.3.1")
-        # self.requires("opencv/4.9.0")
 
         if not self.options.get_safe("system_qt5"):
             self.requires("qt/5.15.14", options={"essential_modules": False, "qtx11extras": True})
