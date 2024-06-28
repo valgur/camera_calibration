@@ -1,0 +1,38 @@
+{
+  "dependencies": [
+    "apriltag",
+    "boost-algorithm",
+    "boost-filesystem",
+    "boost-polygon",
+    "eigen3",
+    "glew",
+    {
+      "name": "glslang",
+      "host": true,
+      "features": [
+        "tools"
+      ]
+    },
+    {
+      "name": "gtest",
+      "host": true
+    },
+    "libpng",
+    "loguru",
+    "opengl",
+    "opengv",
+    "rapidjson",
+    "sophus",
+    "tinyxml2",
+    "vulkan-loader",
+    "libx11",
+    "yaml-cpp",
+    "zlib"
+  ],
+  "overrides": [
+    {
+      "name": "sophus",
+      "version": "1.22.10"
+    }
+  ]
+}
