@@ -76,7 +76,6 @@ The following external dependencies are required.
 | [GLEW](http://glew.sourceforge.net/build.html) | 1.10.0 |
 | [OpenGV](https://github.com/laurentkneip/opengv) | Commit 306a54e6c6b94e2048f820cdf77ef5281d4b48ad |
 | [Qt](https://www.qt.io/) | 5.12.0; minimum version: 5.8 |
-| [SuiteSparse](http://faculty.cse.tamu.edu/davis/suitesparse.html) | 4.2.1 |
 | [zlib](https://zlib.net/) | - |
 
 The following external dependencies are optional.
@@ -89,10 +88,8 @@ The following external dependencies are optional.
 After obtaining all dependencies, the application can be built with CMake, for example as follows:
 
 ```bash
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CUDA_FLAGS="-arch=sm_61" ..
-make -j camera_calibration  # Reduce the number of threads if running out of memory, e.g., -j3
+cmake . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+cmake --build build camera_calibration  # Reduce the number of threads if running out of memory, e.g., -j3
 ```
 
 If you intend to use the depth estimation or live feature detection functionalities,
