@@ -1,6 +1,6 @@
 from conan import ConanFile
 from conan.tools.cmake import cmake_layout, CMakeToolchain, CMakeDeps, CMake
-from conan.tools.env import VirtualBuildEnv
+from conan.tools.env import VirtualBuildEnv, Environment
 from conan.tools.system.package_manager import Apt
 
 
@@ -61,6 +61,14 @@ class PuzzlepaintCameraCalibrationPackage(ConanFile):
         deps.generate()
         venv = VirtualBuildEnv(self)
         venv.generate()
+
+        if not self.options.get_safe("system_qt5") and self.settings.os in ["Linux", "FreeBSD"]:
+            # Qt fails to find system fonts otherwise
+            env = Environment()
+            env.define_path("FONTCONFIG_PATH", "/etc/fonts")
+            env.define_path("FONTCONFIG_FILE", "/etc/fonts/fonts.conf")
+            env.define_path("XLOCALDIR", "/usr/share/X11/locale")
+            env.vars(self, scope="run").save_script("conanrun_use_system_fonts")
 
     def build(self):
         cmake = CMake(self)
