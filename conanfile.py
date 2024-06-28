@@ -46,8 +46,9 @@ class PuzzlepaintCameraCalibrationPackage(ConanFile):
             self.requires("qt/5.15.14", options={"essential_modules": False, "qtx11extras": True})
 
     def system_requirements(self):
+        apt = Apt(self)
+        apt.install(["libv4l-dev"], check=True)
         if self.options.get_safe("system_qt5"):
-            apt = Apt(self)
             apt.install(["qtbase5-dev", "libqt5opengl5-dev", "libqt5x11extras5-dev"], check=True)
 
     def build_requirements(self):
