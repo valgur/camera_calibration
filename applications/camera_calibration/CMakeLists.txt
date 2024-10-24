@@ -17,6 +17,11 @@ if (CMAKE_CUDA_COMPILER)
   # Find external library OpenGV
   find_package(opengv REQUIRED)
 
+  find_package(X11 REQUIRED)
+
+  # Find libv4l2 via PkgConfig
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(libv4l2 REQUIRED IMPORTED_TARGET libv4l2)
 
   # Base library for both the main executable and the unit test executable
   # file(GLOB CAMERA_CALIBRATION_SRC
@@ -160,8 +165,8 @@ if (CMAKE_CUDA_COMPILER)
     Qt5::Widgets
     Boost::headers
     Boost::filesystem
-    v4l2
-    X11
+    X11::X11
+    PkgConfig::libv4l2
   )
 
   if (TARGET StructurePrebuilt)

@@ -1,4 +1,4 @@
-# Source: https://github.com/valgur/cmake-conan/blob/f63f859fe480944aa7a70738b42ae2cf6e3fa2e1/conan_provider.cmake
+# From https://github.com/valgur/cmake-conan/blob/8849f5bc17ae4853d359aa1c8d1e8fe60d28830c/conan_provider.cmake
 
 # The MIT License (MIT)
 #
@@ -23,13 +23,14 @@
 # SOFTWARE.
 
 # Configurable variables
-set(CONAN_MINIMUM_VERSION "2.0.5" CACHE STRING "Minimum required Conan version")
-set(CONAN_HOST_PROFILE "default;auto-cmake" CACHE STRING "Conan host profile")
-set(CONAN_BUILD_PROFILE "default" CACHE STRING "Conan build profile")
+set(CONAN_MINIMUM_VERSION "2.2.0" CACHE STRING "Minimum required Conan version")
+set(CONAN_ISOLATE_HOME "always" CACHE STRING "Set $CONAN_HOME to \${CMAKE_BINARY_DIR}/conan_home (always, if-downloaded or never)")
+set(CONAN_HOST_PROFILE "auto-cmake" CACHE STRING "Conan host profile")
+set(CONAN_BUILD_PROFILE "auto-cmake" CACHE STRING "Conan build profile")
 set(CONAN_INSTALL_ARGS "--build=missing" CACHE STRING "Command line arguments for conan install")
 set(CONAN_DOWNLOAD "if-missing" CACHE STRING "Download the Conan client (always, if-missing or never)")
 set(CONAN_DOWNLOAD_VERSION "latest" CACHE STRING "Download a specific Conan version")
-set(CONAN_ISOLATE_HOME "if-downloaded" CACHE STRING "Set $CONAN_HOME to \${CMAKE_BINARY_DIR}/conan_home (always, if-downloaded or never)")
+set(CONAN_CONANFILE_DIR "${CMAKE_SOURCE_DIR}" CACHE PATH "Directory containing the conanfile")
 
 # Create a new policy scope and set the minimum required cmake version so the
 # features behind a policy setting like if(... IN_LIST ...) behaves as expected
@@ -454,7 +455,7 @@ function(conan_install)
     set(CONAN_OUTPUT_FOLDER ${CMAKE_BINARY_DIR}/conan)
     # Invoke "conan install" with the provided arguments
     set(CONAN_ARGS ${CONAN_ARGS} -of=${CONAN_OUTPUT_FOLDER})
-    message(STATUS "CMake-Conan: ${CONAN_COMMAND} install ${CMAKE_SOURCE_DIR} ${CONAN_ARGS} ${ARGN}")
+    message(STATUS "CMake-Conan: ${CONAN_COMMAND} install ${CONAN_CONANFILE_DIR} ${CONAN_ARGS} ${ARGN}")
 
 
     # In case there was not a valid cmake executable in the PATH, we inject the
@@ -464,7 +465,7 @@ function(conan_install)
         set(ENV{PATH} "$ENV{PATH}:${PATH_TO_CMAKE_BIN}")
     endif()
 
-    execute_process(COMMAND ${CONAN_COMMAND} install ${CMAKE_SOURCE_DIR} ${CONAN_ARGS} ${ARGN} --format=json
+    execute_process(COMMAND ${CONAN_COMMAND} install "${CONAN_CONANFILE_DIR}" ${CONAN_ARGS} ${ARGN} --format=json
         RESULT_VARIABLE return_code
         OUTPUT_VARIABLE conan_stdout
         ERROR_VARIABLE conan_stderr
@@ -489,8 +490,8 @@ function(conan_install)
     set_property(GLOBAL PROPERTY CONAN_GENERATORS_FOLDER "${CONAN_GENERATORS_FOLDER}")
     # reconfigure on conanfile changes
     string(JSON CONANFILE GET ${conan_stdout} graph nodes 0 label)
-    message(STATUS "CMake-Conan: CONANFILE=${CMAKE_SOURCE_DIR}/${CONANFILE}")
-    set_property(DIRECTORY ${CMAKE_SOURCE_DIR} APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/${CONANFILE}")
+    message(STATUS "CMake-Conan: CONANFILE=${CONAN_CONANFILE_DIR}/${CONANFILE}")
+    set_property(DIRECTORY ${CMAKE_SOURCE_DIR} APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CONAN_CONANFILE_DIR}/${CONANFILE}")
     # success
     set_property(GLOBAL PROPERTY CONAN_INSTALL_SUCCESS TRUE)
 
@@ -680,14 +681,14 @@ macro(conan_provide_dependency method package_name)
         endif()
         construct_profile_argument(_host_profile_flags CONAN_HOST_PROFILE)
         construct_profile_argument(_build_profile_flags CONAN_BUILD_PROFILE)
-        if(EXISTS "${CMAKE_SOURCE_DIR}/conanfile.py")
-            file(READ "${CMAKE_SOURCE_DIR}/conanfile.py" outfile)
+        if(EXISTS "${CONAN_CONANFILE_DIR}/conanfile.py")
+            file(READ "${CONAN_CONANFILE_DIR}/conanfile.py" outfile)
             if(NOT "${outfile}" MATCHES ".*CMakeDeps.*")
                 message(WARNING "Cmake-conan: CMakeDeps generator was not defined in the conanfile")
             endif()
             set(generator "")
-        elseif (EXISTS "${CMAKE_SOURCE_DIR}/conanfile.txt")
-            file(READ "${CMAKE_SOURCE_DIR}/conanfile.txt" outfile)
+        elseif (EXISTS "${CONAN_CONANFILE_DIR}/conanfile.txt")
+            file(READ "${CONAN_CONANFILE_DIR}/conanfile.txt" outfile)
             if(NOT "${outfile}" MATCHES ".*CMakeDeps.*")
                 message(WARNING "Cmake-conan: CMakeDeps generator was not defined in the conanfile. "
                     "Please define the generator as it will be mandatory in the future")
@@ -711,6 +712,8 @@ macro(conan_provide_dependency method package_name)
         message(STATUS "CMake-Conan: find_package(${ARGV1}) found, 'conan install' already ran")
         unset(_conan_install_success)
     endif()
+
+    load_conan_paths()
 
     get_property(_conan_generators_folder GLOBAL PROPERTY CONAN_GENERATORS_FOLDER)
 
@@ -741,6 +744,28 @@ macro(conan_provide_dependency method package_name)
         find_package(${package_name} ${ARGN} BYPASS_PROVIDER)
         list(REMOVE_ITEM CMAKE_MODULE_PATH "${_conan_generators_folder}")
     endif()
+endmacro()
+
+
+macro(load_conan_paths)
+    # Extract and load CMAKE_PROGRAM_PATH etc from the Conan-generated conan_paths.cmake.
+    # This macro gets called automatically on find_package() calls, but can also be called manually if needed.
+    get_property(_conan_generators_folder GLOBAL PROPERTY CONAN_GENERATORS_FOLDER)
+    set(_conan_paths_path "${_conan_generators_folder}/conan_paths.cmake")
+    if(NOT EXISTS "${_conan_paths_path}")
+        set(_conan_toolchain_path "${_conan_generators_folder}/conan_toolchain.cmake")
+        if(NOT EXISTS "${_conan_toolchain_path}")
+            # Ensure Conan is available and has run its generators
+            conan_provide_dependency(_ _)
+        endif()
+        file(READ "${_conan_toolchain_path}" _conan_toolchain_contents)
+        string(REGEX MATCH "########## 'find_paths' block #############(.+)########## 'rpath' block #############" _ "${_conan_toolchain_contents}")
+        if(NOT _)
+            message(FATAL_ERROR "CMake-Conan: 'find_paths' block not found in ${_conan_toolchain_path}")
+        endif()
+        file(WRITE "${_conan_paths_path}" "include_guard()\n${CMAKE_MATCH_0}")
+    endif()
+    include("${_conan_paths_path}")
 endmacro()
 
 

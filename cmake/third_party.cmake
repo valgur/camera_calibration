@@ -1,33 +1,49 @@
+option(USE_CONAN "Use Conan to automatically manage dependencies" TRUE)
+if(NOT USE_CONAN OR DEFINED VCPKG_TOOLCHAIN OR CMAKE_TOOLCHAIN_FILE MATCHES "conan_toolchain.cmake")
+    return()
+endif()
+
 if(NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 17)
+endif()
 
-option(USE_CONAN "Use Conan to automatically manage dependencies" TRUE)
+set(CONAN_HOME "${CMAKE_BINARY_DIR}/conan_home")
+set(CUSTOM_REMOTE_PATH "${CMAKE_BINARY_DIR}/cci-valgur")
+set(CCI_FORK_VERSION "613ddaa9e4258e8eabdda903fccc018479781cb8")  # 2024-10-23
+include(FetchContent)
+FetchContent_Declare(
+    cci_valgur
+    URL "https://github.com/valgur/conan-center-index/archive/${CCI_FORK_VERSION}.zip"
+    SOURCE_DIR "${CUSTOM_REMOTE_PATH}"
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(cci_valgur)
+file(WRITE "${CONAN_HOME}/remotes.json" "
+{
+ \"remotes\": [
+  {
+   \"name\": \"cci-valgur\",
+   \"url\": \"${CUSTOM_REMOTE_PATH}\",
+   \"verify_ssl\": true,
+   \"remote_type\": \"local-recipes-index\"
+  }
+ ]
+}
+")
+# Set some reasonable defaults
+file(WRITE "${CONAN_HOME}/global.conf" "
+core.download:download_cache=${CONAN_HOME}/dl_cache
+core.sources:download_cache=${CONAN_HOME}/dl_cache
+")
 
-if(NOT DEFINED CONAN_INSTALL_ARGS)
-    set(CONAN_INSTALL_ARGS
-        --build=missing
-        # Deploy the installed dependencies in the build dir for easier installation, if needed
-        --deployer=${CMAKE_SOURCE_DIR}/cmake/merged_deploy.py "--deployer-folder=${CMAKE_BINARY_DIR}"
-        # Set cppstd without relying on CMAKE_CXX_STANDARD
-        --settings compiler.cppstd=14
+if(CMAKE_VERSION GREATER_EQUAL 3.24)
+    list(APPEND CMAKE_PROJECT_TOP_LEVEL_INCLUDES ${CMAKE_CURRENT_LIST_DIR}/conan_provider.cmake)
+else()
+    message(WARNING
+        "CMake 3.24 or greater is required to install Conan dependencies automatically. "
+        "You will have to run 'conan install . ${CONAN_INSTALL_ARGS}' manually in the source directory instead."
     )
-    if(WIN32)
-        list(APPEND CONAN_INSTALL_ARGS -c tools.deployer:symlinks=False)
-    endif()
-    set(CONAN_INSTALL_ARGS "${CONAN_INSTALL_ARGS}" CACHE INTERNAL "" FORCE)
 endif()
-
-if(USE_CONAN AND NOT DEFINED VCPKG_TOOLCHAIN AND NOT CMAKE_TOOLCHAIN_FILE MATCHES "conan_toolchain.cmake")
-    if(CMAKE_VERSION GREATER_EQUAL 3.24)
-        list(APPEND CMAKE_PROJECT_TOP_LEVEL_INCLUDES ${CMAKE_CURRENT_LIST_DIR}/conan_provider.cmake)
-    else()
-        message(WARNING
-            "CMake 3.24 or greater is required to install Conan dependencies automatically. "
-            "You will have to run 'conan install . ${CONAN_INSTALL_ARGS}' manually in the source directory instead."
-        )
-    endif()
-endif()
-
-set(CONAN_DEPLOYER_DIR "${CMAKE_BINARY_DIR}/merged_deploy")
-list(PREPEND CMAKE_PROGRAM_PATH "${CONAN_DEPLOYER_DIR}/build/bin")

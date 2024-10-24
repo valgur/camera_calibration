@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.18)
 include(cmake/third_party.cmake)
 project(libvis LANGUAGES C CXX)
 
-# Enable C++14 globally
-set(CMAKE_CXX_STANDARD 14)
+# Enable C++17 globally
+set(CMAKE_CXX_STANDARD 17)
 
 # Support IDEs: https://cliutils.gitlab.io/modern-cmake/chapters/features/ides.html
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -39,7 +39,7 @@ if (CMAKE_CUDA_COMPILER)
   
   # Enable C++14 globally for CUDA code
   if(NOT DEFINED CMAKE_CUDA_STANDARD)
-    set(CMAKE_CUDA_STANDARD 14)
+    set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
   endif()
   
